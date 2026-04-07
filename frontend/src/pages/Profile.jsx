@@ -9,8 +9,10 @@ const Profile = () => {
   const { id } = useParams();
   const { user: currentUser } = useContext(AuthContext);
   const fileInputRef = useRef(null);
+  
   const [profileData, setProfileData] = useState(null);
   const [posts, setPosts] = useState([]);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -48,7 +50,6 @@ const Profile = () => {
 
   const handleAcceptRequest = async () => {
     try {
-      // Find the pending request from this user to current user
       const res = await api.get('/friends/requests');
       const pendingReq = res.data.data.requests.find(r => r.sender.id === profileData.user.id);
       if (pendingReq) {
@@ -60,7 +61,7 @@ const Profile = () => {
     }
   };
 
-  if (!profileData) return <Spinner />;
+  if (!profileData || !profileData.user) return <Spinner />;
 
   const isOwnProfile = id === 'me' || currentUser.id === profileData.user.id;
 
@@ -75,8 +76,6 @@ const Profile = () => {
       }
     }
   };
-
-  const [isUpdating, setIsUpdating] = useState(false);
 
   const handleUploadAvatar = async (e) => {
     const file = e.target.files[0];
@@ -101,7 +100,6 @@ const Profile = () => {
     alert("Profile URL copied to clipboard!");
   };
 
-  // Real data formatting
   const friendsCount = profileData.friendsCount || 0;
   const postsCount = posts.length || 0;
 
@@ -117,12 +115,12 @@ const Profile = () => {
             )}
             {profileData.user.profileImage ? 
               <img src={profileData.user.profileImage} alt="profile" /> :
-              <div className="placeholder">{profileData.user.username[0]}</div>
+              <div className="placeholder">{profileData.user.username ? profileData.user.username[0].toUpperCase() : '?'}</div>
             }
           </div>
         </div>
         <div className="ig-profile-stats-container">
-          <h2 className="ig-username">{profileData.user.username.toLowerCase()}</h2>
+          <h2 className="ig-username">{profileData.user.username ? profileData.user.username.toLowerCase() : 'loading...'}</h2>
           <div className="ig-stats-row">
             <div className="ig-stat">
               <span>{postsCount}</span>
@@ -172,11 +170,15 @@ const Profile = () => {
         <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px'}}>
           {posts.map(post => (
             <div key={post.id} style={{aspectRatio: '1/1', overflow: 'hidden'}}>
-               {post.image ? (
-                 <img src={post.image} alt="" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+               {post.imageUrl ? (
+                 post.imageUrl.match(/\.(mp4|webm|ogg|mov)$|^.*cloudinary.*video.*$/i) ? (
+                    <video src={post.imageUrl} style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+                 ) : (
+                    <img src={post.imageUrl} alt="" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+                 )
                ) : (
                  <div style={{width: '100%', height: '100%', background: '#fafafa', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', padding: '10px', textAlign: 'center'}}>
-                    {post.content.substring(0, 50)}...
+                    {post.content ? post.content.substring(0, 50) + '...' : 'Text Post'}
                  </div>
                )}
             </div>
