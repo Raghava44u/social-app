@@ -39,7 +39,7 @@ const Friends = () => {
 
   const handleSendRequest = async (userId) => {
     try {
-      await api.post('/friends/request', { recipientId: userId });
+      await api.post(`/friends/request/${userId}`);
       // Update local state to show request sent
       setSearchResults(prev => prev.map(u => u.id === userId ? { ...u, requestSent: true } : u));
     } catch (err) {
