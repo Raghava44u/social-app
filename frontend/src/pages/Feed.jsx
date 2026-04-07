@@ -77,6 +77,23 @@ const Feed = () => {
 
   return (
     <div className="feed-container">
+      {loading && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(255, 255, 255, 0.8)',
+          zIndex: 9999,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backdropFilter: 'blur(4px)'
+        }}>
+          <Spinner />
+          <p style={{marginTop: '15px', fontWeight: '600', color: '#262626'}}>Post uploading...</p>
+        </div>
+      )}
+
       <div className="create-post-card">
         <form onSubmit={handleCreatePost}>
           <textarea 
