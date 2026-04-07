@@ -9,9 +9,43 @@ const Friends = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+
   useEffect(() => {
     fetchFriendsAndRequests();
   }, []);
+
+  const handleSearch = async (e) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    
+    if (query.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    setSearching(true);
+    try {
+      const res = await api.get(`/users/search?q=${query}`);
+      setSearchResults(res.data.data.users);
+    } catch (err) {
+      console.error("Search failed", err);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handleSendRequest = async (userId) => {
+    try {
+      await api.post('/friends/request', { recipientId: userId });
+      // Update local state to show request sent
+      setSearchResults(prev => prev.map(u => u.id === userId ? { ...u, requestSent: true } : u));
+    } catch (err) {
+      console.error("Error sending friend request", err);
+    }
+  };
 
   const fetchFriendsAndRequests = async () => {
     setLoading(true);
@@ -62,6 +96,58 @@ const Friends = () => {
   return (
     <div className="friends-page">
       {error && <div className="error-msg">{error}</div>}
+
+      <div className="friends-section" style={{ marginBottom: '2rem' }}>
+        <h2>Search Users</h2>
+        <div className="ig-search-container" style={{ position: 'relative', marginBottom: '1.5rem' }}>
+          <input
+            type="text"
+            placeholder="Search by username or name..."
+            value={searchQuery}
+            onChange={handleSearch}
+            className="ig-search-input"
+            style={{
+              width: '100%',
+              padding: '12px 1rem',
+              borderRadius: '8px',
+              border: '1px solid #dbdbdb',
+              fontSize: '1rem',
+              outline: 'none'
+            }}
+          />
+          {searching && <div style={{ marginTop: '0.5rem', color: '#666', fontSize: '0.85rem' }}>Searching...</div>}
+        </div>
+
+        {searchQuery.length >= 2 && searchResults.length > 0 && (
+          <div className="users-grid" style={{ marginBottom: '3rem', background: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #dbdbdb' }}>
+            {searchResults.map(returnedUser => (
+              <div key={returnedUser.id} className="user-card" style={{ border: 'none', background: '#fafafa' }}>
+                <Link to={`/profile/${returnedUser.id}`} className="user-card-header">
+                  {returnedUser.profileImage ? (
+                     <img src={returnedUser.profileImage} alt="avatar" />
+                  ) : (
+                     <div className="avatar-placeholder">{returnedUser.username[0]}</div>
+                  )}
+                  <div>
+                    <h4>{returnedUser.firstName} {returnedUser.lastName}</h4>
+                    <p>@{returnedUser.username}</p>
+                  </div>
+                </Link>
+                <div className="user-card-actions">
+                  {returnedUser.requestSent ? (
+                    <button className="btn-secondary" disabled>Request Sent</button>
+                  ) : (
+                    <button className="btn-primary" onClick={() => handleSendRequest(returnedUser.id)}>Add Friend</button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {searchQuery.length >= 2 && !searching && searchResults.length === 0 && (
+          <p style={{ color: '#666' }}>No users found matching "{searchQuery}"</p>
+        )}
+      </div>
       
       <div className="friends-section">
         <h2>Friend Requests ({requests.length})</h2>
