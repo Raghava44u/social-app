@@ -76,10 +76,13 @@ const Profile = () => {
     }
   };
 
+  const [isUpdating, setIsUpdating] = useState(false);
+
   const handleUploadAvatar = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
+    setIsUpdating(true);
     try {
       const formData = new FormData();
       formData.append('image', file);
@@ -88,6 +91,8 @@ const Profile = () => {
     } catch (err) {
       console.error("Failed to upload avatar", err);
       alert("Failed to upload image. Please try again.");
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -104,7 +109,12 @@ const Profile = () => {
     <div className="ig-profile-container">
       <div className="ig-profile-header">
         <div className="ig-avatar-wrapper">
-          <div className="ig-avatar" onClick={() => isOwnProfile && fileInputRef.current?.click()} style={{cursor: isOwnProfile ? 'pointer' : 'default'}}>
+          <div className="ig-avatar" onClick={() => isOwnProfile && !isUpdating && fileInputRef.current?.click()} style={{cursor: isOwnProfile ? 'pointer' : 'default', position: 'relative'}}>
+            {isUpdating && (
+              <div style={{position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.7)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10}}>
+                <div className="loading-spinner" style={{width: '20px', height: '20px'}}></div>
+              </div>
+            )}
             {profileData.user.profileImage ? 
               <img src={profileData.user.profileImage} alt="profile" /> :
               <div className="placeholder">{profileData.user.username[0]}</div>
@@ -135,7 +145,7 @@ const Profile = () => {
         {isOwnProfile ? (
           <>
             <button className="ig-btn" onClick={handleEditProfile}>Edit profile</button>
-            <button className="ig-btn" onClick={() => fileInputRef.current?.click()}>Change Photo</button>
+            <button className="ig-btn" onClick={() => fileInputRef.current?.click()} disabled={isUpdating}>{isUpdating ? 'Uploading...' : 'Change Photo'}</button>
             <button className="ig-btn" onClick={handleShareProfile}>Share profile</button>
             <input type="file" accept="image/*" ref={fileInputRef} style={{display: 'none'}} onChange={handleUploadAvatar} />
           </>

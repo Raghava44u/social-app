@@ -87,10 +87,10 @@ const Feed = () => {
           <div className="post-actions">
             <input 
               type="file" 
-              accept="image/*" 
+              accept="image/*,video/*" 
               onChange={(e) => setImage(e.target.files[0])} 
             />
-            <button type="submit">Post</button>
+            <button type="submit" disabled={loading}>{loading ? 'Posting...' : 'Post'}</button>
           </div>
         </form>
       </div>

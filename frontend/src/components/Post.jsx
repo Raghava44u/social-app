@@ -115,7 +115,13 @@ const Post = memo(({ post, allowDelete }) => {
         )}
       </div>
 
-      {post.imageUrl && <img src={post.imageUrl} alt="post" className="ig-post-image" />}
+      {post.imageUrl && (
+        post.imageUrl.match(/\.(mp4|webm|ogg|mov)$|^.*cloudinary.*video.*$/i) ? (
+          <video src={post.imageUrl} controls className="ig-post-image" style={{maxHeight: '500px', background: '#000'}} />
+        ) : (
+          <img src={post.imageUrl} alt="post" className="ig-post-image" />
+        )
+      )}
       {!post.imageUrl && <div style={{padding: '20px 14px', fontSize: '1.2rem'}}>{post.content}</div>}
 
       <div className="ig-post-actions">
