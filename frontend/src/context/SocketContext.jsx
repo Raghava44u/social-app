@@ -14,7 +14,7 @@ export const SocketProvider = ({ children }) => {
     if (user) {
       const token = localStorage.getItem('token');
       // Connect to the backend server with the JWT token
-      newSocket = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000', 
+      newSocket = io(import.meta.env.VITE_BACKEND_URL, 
       {
         auth: { token },
         reconnection: true,
