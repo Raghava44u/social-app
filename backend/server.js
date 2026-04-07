@@ -20,58 +20,44 @@ require('./models');
 // Import middleware
 const errorHandler = require('./middleware/errorHandler');
 
-// Import routes
-const authRoutes = require('./routes/auth');
-const userRoutes = require('./routes/users');
-const postRoutes = require('./routes/posts');
-const commentRoutes = require('./routes/comments');
-const friendRoutes = require('./routes/friends');
-const notificationRoutes = require('./routes/notifications');
-
 // Create Express app
 const app = express();
 
 // ---- MIDDLEWARE ----
 
-// ---- SECURITY MIDDLEWARE ----
-// 1. Set robust security headers
+// 1. Security headers
 app.use(helmet({
-  crossOriginResourcePolicy: false, // Required for Cloudinary images
+  crossOriginResourcePolicy: false,
 }));
 
-// 2. API Rate Limiting to prevent brute-force & DDoS
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 250, // Limit each IP to 250 requests per windowMs
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { success: false, message: 'Too many requests from this IP, please try again after 15 minutes.' }
-});
-app.use('/api', apiLimiter);
-
-// 3. Prevent HTTP Parameter Pollution vulnerabilities
+// 2. Prevent HTTP Parameter Pollution
 app.use(hpp());
 
-// CORS - allow frontend to make requests
+// 3. CORS configuration
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:3000',
   credentials: true,
 }));
 
-// Parse JSON request bodies
-app.use(express.json({ limit: '10mb' }));
+// 4. Rate Limiting
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 250,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many requests from this IP.' }
+});
+app.use('/api', apiLimiter);
 
-// Parse URL-encoded request bodies
+// 5. Body Parsing
+app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // ---- API ROUTES ----
 
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/posts', postRoutes);
-app.use('/api/comments', commentRoutes);
-app.use('/api/friends', friendRoutes);
-app.use('/api/notifications', notificationRoutes);
+const routes = require('./routes/index');
+app.use('/api', routes);
+
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -82,14 +68,7 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// ---- SERVE FRONTEND IN PRODUCTION ----
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../frontend/build')));
 
-  app.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '../frontend', 'build', 'index.html'));
-  });
-}
 
 // ---- ERROR HANDLER (must be last) ----
 app.use(errorHandler);
