@@ -35,7 +35,12 @@ app.use(hpp());
 
 // 3. CORS configuration
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: [
+    "https://social-app-eosin-three.vercel.app",
+    "http://localhost:5173",
+    "http://localhost:3000",
+    process.env.CLIENT_URL
+  ].filter(Boolean),
   credentials: true,
 }));
 
