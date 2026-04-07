@@ -46,6 +46,20 @@ const Profile = () => {
     }
   };
 
+  const handleAcceptRequest = async () => {
+    try {
+      // Find the pending request from this user to current user
+      const res = await api.get('/friends/requests');
+      const pendingReq = res.data.data.requests.find(r => r.sender.id === profileData.user.id);
+      if (pendingReq) {
+        await api.put(`/friends/accept/${pendingReq.id}`);
+        fetchProfile();
+      }
+    } catch(err) {
+      console.error("Error accepting request", err);
+    }
+  };
+
   if (!profileData) return <Spinner />;
 
   const isOwnProfile = id === 'me' || currentUser.id === profileData.user.id;
@@ -83,15 +97,14 @@ const Profile = () => {
   };
 
   // Real data formatting
-  const followersCount = profileData.friendsCount || 0;
-  const followingCount = profileData.friendsCount || 0;
+  const friendsCount = profileData.friendsCount || 0;
   const postsCount = posts.length || 0;
 
   return (
     <div className="ig-profile-container">
       <div className="ig-profile-header">
         <div className="ig-avatar-wrapper">
-          <div className="ig-avatar">
+          <div className="ig-avatar" onClick={() => isOwnProfile && fileInputRef.current?.click()} style={{cursor: isOwnProfile ? 'pointer' : 'default'}}>
             {profileData.user.profileImage ? 
               <img src={profileData.user.profileImage} alt="profile" /> :
               <div className="placeholder">{profileData.user.username[0]}</div>
@@ -106,12 +119,8 @@ const Profile = () => {
               <label>posts</label>
             </div>
             <div className="ig-stat">
-              <span>{followersCount}</span>
-              <label>followers</label>
-            </div>
-            <div className="ig-stat">
-              <span>{followingCount}</span>
-              <label>following</label>
+              <span>{friendsCount}</span>
+              <label>friends</label>
             </div>
           </div>
         </div>
@@ -119,7 +128,7 @@ const Profile = () => {
       
       <div className="ig-bio-section">
         <div className="ig-bio-name">{profileData.user.firstName} {profileData.user.lastName}</div>
-        <div>{profileData.user.bio || 'Welcome to my profile.'}</div>
+        <div style={{marginTop: '5px'}}>{profileData.user.bio || 'Welcome to my profile.'}</div>
       </div>
 
       <div className="ig-action-buttons">
@@ -138,6 +147,9 @@ const Profile = () => {
             {profileData.friendshipStatus === 'request_sent' && (
               <button className="ig-btn" disabled>Requested</button>
             )}
+            {profileData.friendshipStatus === 'request_received' && (
+              <button className="ig-btn ig-btn-primary" onClick={handleAcceptRequest}>Accept Follow</button>
+            )}
             {profileData.friendshipStatus === 'friends' && (
               <button className="ig-btn" disabled>Following</button>
             )}
@@ -146,9 +158,21 @@ const Profile = () => {
         )}
       </div>
 
-      <div style={{borderTop: '1px solid #dbdbdb', paddingTop: '15px'}}>
-        {posts.map(post => <Post key={post.id} post={post} allowDelete={true} />)}
-        {posts.length === 0 && <p style={{textAlign: 'center', color: '#8e8e8e', marginTop: '20px'}}>No posts yet</p>}
+      <div style={{borderTop: '1px solid #dbdbdb', paddingTop: '15px', marginTop: '20px'}}>
+        <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px'}}>
+          {posts.map(post => (
+            <div key={post.id} style={{aspectRatio: '1/1', overflow: 'hidden'}}>
+               {post.image ? (
+                 <img src={post.image} alt="" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+               ) : (
+                 <div style={{width: '100%', height: '100%', background: '#fafafa', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', padding: '10px', textAlign: 'center'}}>
+                    {post.content.substring(0, 50)}...
+                 </div>
+               )}
+            </div>
+          ))}
+        </div>
+        {posts.length === 0 && <p style={{textAlign: 'center', color: '#8e8e8e', marginTop: '40px'}}>No posts yet</p>}
       </div>
     </div>
   );
